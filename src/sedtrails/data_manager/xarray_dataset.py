@@ -98,11 +98,18 @@ def populate_flowfield_metadata(ds, flow_field_names):
         List of flow field names
     """
     for ff_idx, ff_name in enumerate(flow_field_names):
-        # Truncate name if it's longer than name_strlen, or pad if shorter
-        max_len = ds.dims['name_strlen']
-        truncated_name = ff_name[:max_len].ljust(max_len)
-        name_array = np.array(list(truncated_name), dtype='S1')
-        ds['flowfield_name'][ff_idx, :] = name_array
+        if isinstance(ff_name, list): # when we have multiple populations
+            for sub_idx, sub_name in enumerate(ff_name):
+                max_len = ds.dims['name_strlen']
+                truncated_name = sub_name[:max_len].ljust(max_len)
+                name_array = np.array(list(truncated_name), dtype='S1')
+                ds['flowfield_name'][sub_idx, :] = name_array
+        else: # we have only one population
+            # Truncate name if it's longer than name_strlen, or pad if shorter
+            max_len = ds.dims['name_strlen']
+            truncated_name = ff_name[:max_len].ljust(max_len)
+            name_array = np.array(list(truncated_name), dtype='S1')
+            ds['flowfield_name'][ff_idx, :] = name_array
 
 
 def collect_timestep_data(ds, populations, timestep, current_time):

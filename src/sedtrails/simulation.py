@@ -280,14 +280,20 @@ class Simulation:
 
         # Determine flow field names from configuration
         flow_field_names = []
-        for population in populations_config:
-            if 'tracer_methods' in population and ('vanwesten' in population['tracer_methods'] or 'soulsby' in population['tracer_methods']):
-                if 'vanwesten' in population['tracer_methods']:
-                    flow_field_names = population['tracer_methods']['vanwesten']['flow_field_name']
-                elif 'soulsby' in population['tracer_methods']:
-                    flow_field_names = population['tracer_methods']['soulsby']['flow_field_name']
-                break  # Use the first population's flow fields for now
-
+        for idx, population in enumerate(populations_config):
+            tracer_methods = population.get('tracer_methods', {})
+            if 'vanwesten' in tracer_methods:
+                flow_field_name = tracer_methods['vanwesten']['flow_field_name']
+            elif 'soulsby' in tracer_methods:
+                flow_field_name = tracer_methods['soulsby']['flow_field_name']
+            else:
+                raise ConfigurationError(
+                    f"No valid tracer method found in configuration for population[{idx}]. "
+                    f"Expected one of: 'vanwesten' or 'soulsby'. "
+                    f"Got: {list(tracer_methods.keys()) if isinstance(tracer_methods, dict) else type(tracer_methods).__name__}"
+                )
+            flow_field_names.append(flow_field_name)
+# ...existing code...
         # Create SedTrails dataset using DataManager's writer (composition)
         total_particles = sum([len(pop.particles['x']) for pop in populations])
         max_timesteps = (simulation_time.duration.seconds // simulation_time.time_step.seconds) + 1
@@ -501,7 +507,7 @@ class Simulation:
 
 
 if __name__ == '__main__':
-    sim = Simulation(config_file='examples/config.example_natascia.yaml')
+    sim = Simulation(config_file='examples/config.example_bart.yaml')
     sim.run()
 
     # NOTE: This will failed on the output saving. But that's success
